@@ -1,4 +1,4 @@
-declare Env Str2Lst Parse ParseFun Infix2Prefix BurntTree ArithmeticApply Evaluate GoLeft P
+declare Env Str2Lst Parse ParseFun Infix2Prefix BurntTree ArithmeticApply Evaluate GoLeft P CanGoLeft GetElement UpdateTree Insert NewTree
 
 %% Split a string by spaces
 fun {Str2Lst Data}
@@ -86,53 +86,68 @@ end
 
 % {Show {Infix2Prefix {Str2Lst "fun square x = x * x"}}}
 
-BurntTree = [node(type:'@' value:'@') node(type:'@' value:'@') node(type:'Literal' value:10) node(type:'Operator' value:'*') node(type:'Reference' value:3) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil)]
-
-fun {CanGoLeft Tree X}
-    if {List.length Tree} > X*2 then
-        true
-    else
-        false
-    end
-end
-
-fun {GetElement Tree X}
-    if {List.nth Tree X}.type == 'Literal' then
-        {List.nth Tree X}.value
-    elseif {List.nth Tree X}.type == 'Reference' then
-        {GetElement Tree {List.nth Tree X}.value}
-    end
-end
-
-fun{ArithmeticApply Tree X}
-    if {List.nth Tree X}.value == '*' then
-        {GetElement Tree {Int.'div' X 1}+1} * {GetElement Tree {Int.'div' X 2}+1}
-    elseif {List.nth Tree X}.value == '+' then
-        {GetElement Tree {Int.'div' X 1}+1} + {GetElement Tree {Int.'div' X 2}+1}
-    elseif {List.nth Tree X}.value == '-' then
-        {GetElement Tree {Int.'div' X 1}+1} - {GetElement Tree {Int.'div' X 2}+1}
-    elseif {List.nth Tree X}.value == '/' then
-        {Int.'div' {GetElement Tree {Int.'div' X 1}+1} {GetElement Tree {Int.'div' X 2}+1}}
-    else
-        'Mal'
-    end
-end
+BurntTree = [node(type:'@' value:'@') 
+                node(type:'@' value:'@') node(type:'Reference' value:5) 
+                node(type:'Operator' value:'+') node(type:'@' value:'@') node(type:"Nil" value:nil) node(type:"Nil" value:nil) 
+                node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:'@' value:'@') node(type:'Reference' value:21) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil)
+                node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:'Operator' value:'*') node(type:'Literal' value:4) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil) node(type:"Nil" value:nil)]
 
 fun {Regrex Tree}
+    fun {CanGoLeft Tree X}
+        if {List.length Tree} > X*2 then
+            true
+        else
+            false
+        end
+    end
+    
+    fun {NewTree Tree In V}
+        local Top Bottom I in
+            I = {Int.'div' In 4}
+            Top = {List.take Tree I-1}
+            Bottom = {List.drop Tree I-1}
+            {Append {Append Top [V]} Bottom}
+        end
+    end
+
+    fun {GetElement Tree X}
+        if {List.nth Tree X}.type == 'Literal' then
+            {List.nth Tree X}.value
+        elseif {List.nth Tree X}.type == 'Reference' then
+            {GetElement Tree {List.nth Tree X}.value}
+        elseif {List.nth Tree X}.type == '@' then
+            {Evaluate Tree X}
+        end
+    end
+    
+    fun{ArithmeticApply Tree X}
+        if {List.nth Tree X}.value == '*' then
+            {GetElement Tree {Int.'div' X 1}+1} * {GetElement Tree {Int.'div' X 2}+1}
+        elseif {List.nth Tree X}.value == '+' then
+            {GetElement Tree {Int.'div' X 1}+1} + {GetElement Tree {Int.'div' X 2}+1}
+        elseif {List.nth Tree X}.value == '-' then
+            {GetElement Tree {Int.'div' X 1}+1} - {GetElement Tree {Int.'div' X 2}+1}
+        elseif {List.nth Tree X}.value == '/' then
+            {Int.'div' {GetElement Tree {Int.'div' X 1}+1} {GetElement Tree {Int.'div' X 2}+1}}
+        else
+            {Show 'Error sintactico'}
+            'Mal'
+        end
+    end
+
     fun {Evaluate Tree X}
-        local R in
+        local R ResultTree in
             if {List.nth Tree X}.type == 'Literal' then
                 R = {List.nth Tree X}.value
             elseif {List.nth Tree X}.type == 'Operator' then
-                R = {ArithmeticApply Tree X}
-                %remplazar valores
-                %volver a evaluar
+                R = {ArithmeticApply Tree X} 
+                ResultTree = {NewTree Tree X node(type:'Literal' value:R)}
+                {Evaluate ResultTree {Int.'div' X 4}}
             else
                 if {CanGoLeft Tree X} then
                     {Evaluate Tree X*2} 
                 else
-                    {Evaluate Tree X}
-                    %error
+                    R = 'Error de sintaxis'
                 end
             end
         end
