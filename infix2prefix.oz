@@ -94,10 +94,10 @@ BurntTree = [node(type:'@' value:'@')
 
 fun {Regrex Tree}
     fun {CanGoLeft Tree X}
-        if {List.length Tree} > X*2 then
-            true
-        else
+        if {List.nth Tree X*2}.type == "Nil" then
             false
+        else
+            true
         end
     end
     

@@ -1,4 +1,4 @@
-declare TokenToTree Env Str2Lst Parse ParseFun Infix2Prefix BurntTree Operators ListOrder Insert
+declare TokenToTree Env Str2Lst Parse ParseFun Infix2Prefix BurntTree Operators ListOrder Insert Regrex CanGoLeft NewTree GetElement ArithmeticApply Evaluate
 
 %% Split a string by spaces
 fun {Str2Lst Data}
@@ -173,17 +173,85 @@ fun {BuildTree Text}
     end
 
 end
-local A B in 
 
-A = {BuildTree "x * ( x + x ) / y"}
+fun {Regrex Tree}
+    fun {CanGoLeft Tree X}
+        if {List.nth Tree X*2}.type == "Nil" then
+            false
+        else
+            true
+        end
+    end
+    
+    fun {NewTree Tree In V}
+        local Top Bottom I in
+            I = {Int.'div' In 4}
+            Top = {List.take Tree I-1}
+            Bottom = {List.drop Tree I-1}
+            {Append {Append Top [V]} Bottom}
+        end
+    end
 
-{Browse A}
+    fun {GetElement Tree X}
+        if {List.nth Tree X}.type == 'Literal' then
+            {List.nth Tree X}.value
+        elseif {List.nth Tree X}.type == 'Reference' then
+            {GetElement Tree {List.nth Tree X}.value}
+        elseif {List.nth Tree X}.type == '@' then
+            {Evaluate Tree X}
+        end
+    end
+    
+    fun{ArithmeticApply Tree X}
+        if {List.nth Tree X}.value == "*" then
+            {GetElement Tree {Int.'div' X 1}+1} * {GetElement Tree {Int.'div' X 2}+1}
+        elseif {List.nth Tree X}.value == "+" then
+            {GetElement Tree {Int.'div' X 1}+1} + {GetElement Tree {Int.'div' X 2}+1}
+        elseif {List.nth Tree X}.value == "-" then
+            {GetElement Tree {Int.'div' X 1}+1} - {GetElement Tree {Int.'div' X 2}+1}
+        elseif {List.nth Tree X}.value == "/" then
+            {Int.'div' {GetElement Tree {Int.'div' X 1}+1} {GetElement Tree {Int.'div' X 2}+1}}
+        else
+            {Show 'Error sintactico'}
+            {Show {List.nth Tree X}.value}
+            'Mal'
+        end
+    end
 
-B = {Dictionary.new}
-{Dictionary.put B 'x' 1}
-{Dictionary.put B 'y' 2}
+    fun {Evaluate Tree X}
+        local R ResultTree in
+            if {List.nth Tree X}.type == 'Literal' then
+                R = {List.nth Tree X}.value
+            elseif {List.nth Tree X}.type == 'Operator' then
+                R = {ArithmeticApply Tree X} 
+                ResultTree = {NewTree Tree X node(type:'Literal' value:R)}
+                {Evaluate ResultTree {Int.'div' X 4}}
+            else
+                if {CanGoLeft Tree X} then
+                    {Evaluate Tree X*2} 
+                else
+                    R = 'Error de sintaxis'
+                end
+            end
+        end
+    end
+    {Evaluate Tree 1}
+end
 
-{Browse {ReplaceVar A B 1}}
+local A B C D in 
+
+    A = {BuildTree "x + y"}
+
+    {Browse A}
+
+    B = {Dictionary.new}
+    {Dictionary.put B 'x' 1}
+    {Dictionary.put B 'y' 2}
+
+    C = {ReplaceVar A B 1}
+    D = {Regrex C}
+    {Show 'funciona'}
+    {Show D}
 
 end
 
