@@ -100,6 +100,7 @@ fun {ListOrder L}
             Bottom = {List.drop L (Rop+2)}
             Temp = {List.drop {List.take L (Rop+2)} (Rop-1)}
             Tempo = {Append {Append Top [Temp]} Bottom}
+            {ListOrder Tempo}
         else
             L
         end
@@ -148,8 +149,9 @@ fun {ReplaceVar Tree Values N}
     local Node Top Bottom Temp Ti in 
         if N =< {List.length Tree} then 
             if {List.nth Tree N}.type == 'Literal' then
-                Ti = {List.nth Tree N}.value
-                Node = node(type:'Literal' value:Values.Ti)
+                {Browse {List.nth Tree N}}
+                Ti = {Dictionary.get Values {String.toAtom {List.nth Tree N}.value}}
+                Node = node(type:'Literal' value:Ti)
                 Top = {List.take Tree N-1}
                 Bottom = {List.drop Tree N}
                 Temp = {Append {Append Top [Node]} Bottom}
@@ -171,11 +173,19 @@ fun {BuildTree Text}
     end
 
 end
+local A B in 
 
-{Browse {BuildTree "x * ( x + x ) / y"}}
-{Browse {ReplaceVar BurntTree val('x':1 'y':2) 1}}
+A = {BuildTree "x * ( x + x ) / y"}
 
+{Browse A}
 
+B = {Dictionary.new}
+{Dictionary.put B 'x' 1}
+{Dictionary.put B 'y' 2}
+
+{Browse {ReplaceVar A B 1}}
+
+end
 
 
 
