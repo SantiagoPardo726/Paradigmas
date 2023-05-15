@@ -75,7 +75,7 @@ fun {Infix2Prefix Data}
     end
 end
 
-BurntTree = [node(type:'@' value:'@') node(type:'@' value:'@') node(type:'Literal' value:2) node(type:'Operator' value:'*') node(type:'Reference' value:3) node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil)] 
+BurntTree = [node(type:'@' value:'@') node(type:'@' value:'@') node(type:'Literal' value:'x') node(type:'Operator' value:'*') node(type:'Literal' value:'y') node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil) node(type:'Nil' value:nil)] 
 
 Operators = ["+" "-" "*" "/"]
 
@@ -144,6 +144,25 @@ fun {CompleteTree Tree N L}
     end
 end
 
+fun {ReplaceVar Tree Values N}
+    local Node Top Bottom Temp Ti in 
+        if N =< {List.length Tree} then 
+            if {List.nth Tree N}.type == 'Literal' then
+                Ti = {List.nth Tree N}.value
+                Node = node(type:'Literal' value:Values.Ti)
+                Top = {List.take Tree N-1}
+                Bottom = {List.drop Tree N}
+                Temp = {Append {Append Top [Node]} Bottom}
+                {ReplaceVar Temp Values N+1}
+            else
+                {ReplaceVar Tree Values N+1}
+            end
+        else
+            Tree
+        end
+    end
+end
+
 fun {BuildTree Text}
     local Corrected TreeBad TreeNils in 
         Corrected = {ListOrder {Infix2Prefix {Str2Lst Text}}}
@@ -153,75 +172,8 @@ fun {BuildTree Text}
 
 end
 
-
-fun {Regrex Tree}
-    fun {CanGoLeft Tree X}
-        if {List.length Tree} > X*2 then
-            true
-        else
-            false
-        end
-    end
-    
-    fun {NewTree Tree In V}
-        local Top Bottom I in
-            I = {Int.'div' In 4}
-            Top = {List.take Tree I-1}
-            Bottom = {List.drop Tree I-1}
-            {Append {Append Top [V]} Bottom}
-        end
-    end
-
-    fun {GetElement Tree X}
-        if {List.nth Tree X}.type == 'Literal' then
-            {List.nth Tree X}.value
-        elseif {List.nth Tree X}.type == 'Reference' then
-            {GetElement Tree {List.nth Tree X}.value}
-        elseif {List.nth Tree X}.type == '@' then
-            {Evaluate Tree X}
-        end
-    end
-    
-    fun{ArithmeticApply Tree X}
-        if {List.nth Tree X}.value == '*' then
-            {GetElement Tree {Int.'div' X 1}+1} * {GetElement Tree {Int.'div' X 2}+1}
-        elseif {List.nth Tree X}.value == '+' then
-            {GetElement Tree {Int.'div' X 1}+1} + {GetElement Tree {Int.'div' X 2}+1}
-        elseif {List.nth Tree X}.value == '-' then
-            {GetElement Tree {Int.'div' X 1}+1} - {GetElement Tree {Int.'div' X 2}+1}
-        elseif {List.nth Tree X}.value == '/' then
-            {Int.'div' {GetElement Tree {Int.'div' X 1}+1} {GetElement Tree {Int.'div' X 2}+1}}
-        else
-            {Show 'Error sintactico'}
-            'Mal'
-        end
-    end
-
-    fun {Evaluate Tree X}
-        local R ResultTree in
-            if {List.nth Tree X}.type == 'Literal' then
-                R = {List.nth Tree X}.value
-            elseif {List.nth Tree X}.type == 'Operator' then
-                R = {ArithmeticApply Tree X} 
-                ResultTree = {NewTree Tree X node(type:'Literal' value:R)}
-                {Evaluate ResultTree {Int.'div' X 4}}
-            else
-                if {CanGoLeft Tree X} then
-                    {Evaluate Tree X*2} 
-                else
-                    R = 'Error de sintaxis'
-                end
-            end
-        end
-    end
-    {Evaluate Tree 1}
-end
-
-local A in
-    A = {BuildTree "x * x"}
-    % {Regrex A}
-end
-
+{Browse {BuildTree "x * ( x + x ) / y"}}
+{Browse {ReplaceVar BurntTree val('x':1 'y':2) 1}}
 
 
 
